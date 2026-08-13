@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<title>curlr — beta</title>
+<meta name="description" content="curlr — a fast, keyboard-first API client for macOS. Beta unlocks Aug 14, 2026 · 4:00 PM IST." />
+<style>
+  :root {
+    --surface-underground:#141414; --surface-card:#181818; --surface-ground:#1e1e1e;
+    --surface-l1:#252525; --surface-l2:#2d2d2d; --surface-input:#0e0e0e;
+    --stroke-subtle:#21262d; --stroke-default:#30363d; --stroke-strong:#464b53;
+    --text-primary:#e6edf3; --text-secondary:#8b949e; --text-tertiary:#6e7781;
+    --accent-green:#1d934e; --accent-green-bright:#42bf76; --accent-danger:#ff5252;
+    --method-get-text:#61adff; --method-get-bg:#05142e;
+    --json-key:#79adff; --json-string:#a8c56b; --json-number:#e5a44d; --json-boolean:#c17ed6;
+    --font-mono:"Geist Mono","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --radius-md:8px; --radius-lg:12px; --radius-xl:16px;
+    --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body {
+    background:var(--surface-underground);
+    color:var(--text-primary);
+    font-family:var(--font-sans);
+    -webkit-font-smoothing:antialiased;
+    min-height:100%;
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before {
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(60vw 50vh at 50% -10%, rgba(29,147,78,0.16), transparent 70%),
+      radial-gradient(40vw 40vh at 90% 10%, rgba(66,191,118,0.08), transparent 70%),
+      linear-gradient(180deg, #101010 0%, #0c0c0c 100%);
+  }
+  body::after {
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.5;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(80vw 80vh at 50% 20%, #000 20%, transparent 75%);
+            mask-image:radial-gradient(80vw 80vh at 50% 20%, #000 20%, transparent 75%);
+    animation:drift 40s linear infinite;
+  }
+  @keyframes drift { to { background-position:44px 44px, 44px 44px; } }
+  /* cursor-following spotlight */
+  .spotlight {
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(360px 360px at var(--mx,50%) var(--my,15%), rgba(66,191,118,0.09), transparent 68%);
+  }
+  .wrap { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:32px 24px 80px; }
+
+  /* nav */
+  nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:52px; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand svg { width:30px; height:30px; border-radius:7px; filter:drop-shadow(0 4px 12px rgba(29,147,78,.4)); }
+  .brand-name { font-family:var(--font-mono); font-weight:600; font-size:19px; letter-spacing:-.02em; }
+  .brand-name .slash { color:var(--accent-green-bright); }
+  .pill {
+    display:inline-flex; align-items:center; gap:7px;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; font-weight:600;
+    color:var(--accent-green-bright); background:rgba(29,147,78,0.12);
+    border:1px solid rgba(66,191,118,0.28); padding:5px 11px; border-radius:999px;
+  }
+  .pill .live-dot { width:7px; height:7px; border-radius:50%; background:var(--accent-green-bright); box-shadow:0 0 0 0 rgba(66,191,118,.6); animation:pulse 1.8s ease-out infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(66,191,118,.5);} 70%{box-shadow:0 0 0 7px rgba(66,191,118,0);} 100%{box-shadow:0 0 0 0 rgba(66,191,118,0);} }
+
+  /* hero copy */
+  .eyebrow {
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent-green-bright); margin-bottom:16px;
+  }
+  .eyebrow .tminus { color:var(--text-tertiary); }
+  h1 { font-size:clamp(32px,6vw,54px); line-height:1.04; letter-spacing:-.03em; font-weight:700; margin-bottom:16px; }
+  h1 .dim { color:var(--text-secondary); }
+  .lede { font-size:16px; line-height:1.6; color:var(--text-secondary); max-width:560px; }
+  .lede b { color:var(--text-primary); font-weight:600; }
+
+  /* ===== terminal ===== */
+  .terminal {
+    margin:38px 0 8px; border:1px solid var(--stroke-default); border-radius:var(--radius-xl);
+    background:linear-gradient(180deg,#151515,#111);
+    overflow:hidden; box-shadow:0 30px 70px -24px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.02) inset;
+  }
+  .titlebar {
+    display:flex; align-items:center; gap:8px; height:40px; padding:0 14px;
+    background:var(--surface-underground); border-bottom:1px solid var(--stroke-subtle);
+  }
+  .dot { width:11px; height:11px; border-radius:50%; }
+  .dot.r{background:#ff5f57} .dot.y{background:#febc2e} .dot.g{background:#28c840}
+  .titlebar .t { margin-left:8px; font-family:var(--font-mono); font-size:12px; color:var(--text-tertiary); }
+  .titlebar .badge { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--method-get-text); background:var(--method-get-bg); padding:3px 8px; border-radius:5px; }
+  .term-body {
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.85; color:var(--text-secondary);
+    padding:18px 20px; min-height:250px;
+  }
+  .term-body .prompt { color:var(--accent-green-bright); margin-right:8px; }
+  .term-body .flag { color:var(--json-number); }
+  .term-body .url { color:var(--text-primary); }
+  .term-body .url .path { color:var(--accent-green-bright); }
+  .cursor { display:inline-block; width:8px; height:1.05em; background:var(--accent-green-bright); vertical-align:-2px; margin-left:1px; animation:blink 1.05s steps(1) infinite; }
+  @keyframes blink { 50% { opacity:0; } }
+  .stream { margin-top:4px; }
+  .stream .ln { opacity:0; transform:translateY(4px); animation:lnin .3s var(--ease-out-expo) forwards; }
+  @keyframes lnin { to { opacity:1; transform:none; } }
+  .stream .hdr { color:var(--text-tertiary); }
+  .stream .status { color:var(--accent-danger); font-weight:600; }
+  .stream .ok { color:var(--accent-green-bright); }
+  .spinner { color:var(--accent-green-bright); }
+  .jsonblk { margin-top:2px; white-space:pre; }
+  .jsonblk .k{color:var(--json-key)} .jsonblk .s{color:var(--json-string)} .jsonblk .n{color:var(--json-number)} .jsonblk .b{color:var(--json-boolean)} .jsonblk .p{color:var(--text-tertiary)}
+  .rem { color:var(--json-string); }
+
+  /* ===== flip countdown ===== */
+  .count { display:flex; gap:14px; margin-top:34px; }
+  .cell {
+    flex:1; position:relative; background:linear-gradient(180deg,var(--surface-l1),#1c1c1c);
+    border:1px solid var(--stroke-default); border-radius:var(--radius-lg);
+    padding:24px 10px 14px; text-align:center; overflow:hidden;
+  }
+  .cell::before { content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(0,0,0,.5); z-index:2; }
+  .cell .num {
+    display:block; font-family:var(--font-mono); font-weight:700; font-size:clamp(32px,7vw,56px); line-height:1;
+    letter-spacing:-.02em; font-variant-numeric:tabular-nums;
+    background:linear-gradient(180deg,#f4fff8,#78dfa2); -webkit-background-clip:text; background-clip:text; color:transparent;
+    will-change:transform,filter;
+  }
+  .cell.tick .num { animation:tickin .55s var(--ease-out-expo); }
+  @keyframes tickin { 0%{ transform:translateY(46%); opacity:0; filter:blur(3px); } 55%{ filter:blur(0); } 100%{ transform:none; opacity:1; } }
+  .cell .lbl { font-family:var(--font-mono); font-size:11px; letter-spacing:.16em; color:var(--text-tertiary); margin-top:14px; text-transform:uppercase; }
+  .cell .sep { position:absolute; right:-8px; top:50%; transform:translateY(-50%); font-family:var(--font-mono); font-size:28px; color:var(--stroke-strong); z-index:3; }
+
+  .unlockline { margin-top:26px; font-family:var(--font-mono); font-size:13px; color:var(--text-secondary); text-align:center; }
+  .unlockline strong { color:var(--text-primary); font-weight:600; }
+  .timesrc { margin-top:10px; text-align:center; font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary); }
+  .timesrc .warn { color:var(--accent-danger); }
+
+  /* ===== download view ===== */
+  .dl-hero .eyebrow { color:var(--accent-green-bright); }
+  .dlbtn {
+    display:inline-flex; align-items:center; gap:14px; margin-top:8px;
+    background:var(--accent-green); color:#fff; text-decoration:none;
+    padding:16px 26px; border-radius:var(--radius-lg); font-weight:600; font-size:16px;
+    box-shadow:0 14px 34px -12px rgba(29,147,78,.7); position:relative; overflow:hidden;
+    transition:transform .18s var(--ease-out-expo), box-shadow .18s;
+  }
+  .dlbtn::after { content:""; position:absolute; top:0; left:-60%; width:40%; height:100%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.25),transparent); animation:sheen 3.2s ease-in-out infinite; }
+  @keyframes sheen { 0%{left:-60%;} 55%,100%{left:130%;} }
+  .dlbtn:hover { transform:translateY(-2px); box-shadow:0 20px 42px -12px rgba(29,147,78,.85); }
+  .dlbtn svg { width:26px; height:26px; position:relative; z-index:1; }
+  .dlbtn .meta { display:flex; flex-direction:column; align-items:flex-start; line-height:1.2; position:relative; z-index:1; }
+  .dlbtn .meta small { font-weight:400; opacity:.82; font-size:12px; font-family:var(--font-mono); }
+
+  .preview { margin:34px 0; border:1px solid var(--stroke-default); border-radius:var(--radius-xl); overflow:hidden; background:#000; }
+  .preview video { display:block; width:100%; height:auto; }
+
+  .steps h2 { font-size:20px; letter-spacing:-.02em; margin:44px 0 8px; }
+  .steps p.sub { color:var(--text-secondary); font-size:14px; margin-bottom:22px; }
+  ol.steps-list { list-style:none; counter-reset:s; display:flex; flex-direction:column; gap:16px; }
+  ol.steps-list > li {
+    counter-increment:s; position:relative; padding:16px 16px 16px 58px;
+    background:var(--surface-card); border:1px solid var(--stroke-subtle); border-radius:var(--radius-lg);
+    font-size:15px; line-height:1.55; color:var(--text-primary);
+  }
+  ol.steps-list > li::before {
+    content:counter(s); position:absolute; left:16px; top:15px;
+    width:28px; height:28px; border-radius:8px; display:grid; place-items:center;
+    font-family:var(--font-mono); font-weight:600; font-size:13px; color:var(--accent-green-bright);
+    background:rgba(29,147,78,.14); border:1px solid rgba(66,191,118,.3);
+  }
+  ol.steps-list code.inline { font-family:var(--font-mono); font-size:13px; background:var(--surface-l2); padding:2px 6px; border-radius:5px; color:var(--text-primary); }
+  .cmd { margin-top:12px; display:flex; align-items:center; gap:10px; background:var(--surface-input); border:1px solid var(--stroke-default); border-radius:8px; padding:10px 12px; }
+  .cmd code { flex:1; font-family:var(--font-mono); font-size:13px; color:var(--text-primary); white-space:pre; overflow-x:auto; }
+  .cmd code .tok-cmd{color:var(--accent-green-bright)} .cmd code .tok-flag{color:var(--json-number)} .cmd code .tok-path{color:var(--json-key)}
+  .copybtn { font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--text-secondary); background:var(--surface-l2); border:1px solid var(--stroke-strong); padding:6px 10px; border-radius:6px; cursor:pointer; flex:none; }
+  .copybtn.done { color:var(--accent-green-bright); border-color:rgba(66,191,118,.4); }
+  .note { margin-top:12px; font-size:13px; line-height:1.55; color:var(--text-secondary); background:rgba(66,191,118,.06); border-left:2px solid var(--accent-green); padding:10px 14px; border-radius:0 8px 8px 0; }
+  .note strong { color:var(--text-primary); }
+  .done-line { margin-top:26px; font-size:15px; color:var(--text-primary); }
+
+  footer { margin-top:64px; text-align:center; font-family:var(--font-mono); font-size:12px; color:var(--text-tertiary); }
+  footer .slash { color:var(--accent-green); }
+
+  .hidden { display:none !important; }
+  .fadein { animation:fadein .6s var(--ease-out-expo); }
+  @keyframes fadein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+  /* confetti */
+  #confetti { position:fixed; inset:0; z-index:50; pointer-events:none; }
+
+  @media (max-width:560px){
+    .count{ gap:8px; } .cell{ padding:16px 4px 10px; } .cell .sep{ display:none; }
+    .dlbtn{ width:100%; justify-content:center; } .term-body{ font-size:12px; }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cell.tick .num, .stream .ln, .dlbtn::after, .body::after, .pill .live-dot { animation:none !important; }
+    .cursor { animation:none; }
+  }
+</style>
+</head>
+<body>
+<div class="spotlight" id="spotlight"></div>
+<div class="wrap">
+  <nav>
+    <div class="brand">
+      <svg viewBox="0 0 16.1538 16.1538" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="16.1538" height="16.1538" rx="3.6" fill="url(#g)"/>
+        <path d="M3.80112 12.0846L6.60988 4.06708H7.80829L4.99953 12.0846H3.80112Z" fill="#fff"/>
+        <path d="M8.34599 12.0846L11.1547 4.06708H12.3532L9.54439 12.0846H8.34599Z" fill="#fff"/>
+        <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="16.1538" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#33B865"/><stop offset="1" stop-color="#1D934E"/>
+        </linearGradient></defs>
+      </svg>
+      <span class="brand-name"><span class="slash">//</span>curlr</span>
+    </div>
+    <span class="pill"><span class="live-dot"></span>BETA</span>
+  </nav>
+
+  <!-- ============ COUNTDOWN VIEW ============ -->
+  <section id="countdown-view" class="hidden">
+    <h1>curl, without <span class="dim">the friction.</span></h1>
+    <!-- <p class="lede">The beta opens the moment this request stops returning <b>425</b>. Watch it live.</p> -->
+
+    <div class="terminal">
+      <div class="titlebar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="t">curlr — beta.watch</span>
+        <span class="badge">HTTP/2 · streaming</span>
+      </div>
+      <div class="term-body">
+        <div><span class="prompt">$</span><span id="typed"></span><span class="cursor" id="cursor"></span></div>
+        <div class="stream" id="stream"></div>
+      </div>
+    </div>
+
+    <div class="count" id="count">
+      <div class="cell" id="d"><span class="num">00</span><span class="lbl">Days</span><span class="sep">:</span></div>
+      <div class="cell" id="h"><span class="num">00</span><span class="lbl">Hours</span><span class="sep">:</span></div>
+      <div class="cell" id="m"><span class="num">00</span><span class="lbl">Minutes</span><span class="sep">:</span></div>
+      <div class="cell" id="s"><span class="num">00</span><span class="lbl">Seconds</span></div>
+    </div>
+
+    <div class="unlockline">Unlocks <strong id="unlock-label">Aug 14, 2026 · 4:00 PM IST</strong></div>
+    <!-- <div class="timesrc" id="timesrc">Verifying time…</div> -->
+  </section>
+
+  <!-- ============ DOWNLOAD VIEW ============ -->
+  <section id="download-view" class="hidden dl-hero">
+    <div class="eyebrow" style="display:flex;align-items:center;gap:8px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l1.9 6.6L20 10l-6.1 1.4L12 18l-1.9-6.6L4 10l6.1-1.4L12 2z" fill="#42bf76"/></svg>
+      Beta is live</div>
+    <h1>You're in.<br><span class="dim">Grab curlr for macOS.</span></h1>
+    <p class="lede">The beta just went live. Download the build below and follow the four quick steps to run it.</p>
+
+    <div class="terminal" style="margin-bottom:28px;">
+      <div class="titlebar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="t">curlr — beta.watch</span>
+        <span class="badge" style="color:var(--accent-green-bright);background:rgba(29,147,78,.14)">200 OK</span>
+      </div>
+      <div class="term-body">
+        <div><span class="prompt">$</span> curlr <span class="url">GET https://api.curlr.dev<span class="path">/v1/beta/access</span></span> <span class="flag">--watch</span></div>
+        <div class="stream">
+          <div class="ln ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#42bf76" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 200 OK · unlocked · application/json</div>
+          <div class="ln jsonblk"><span class="p">{</span>
+  <span class="k">"status"</span>: <span class="s">"unlocked"</span>,
+  <span class="k">"platform"</span>: <span class="s">"macOS · Apple Silicon"</span>,
+  <span class="k">"artifact"</span>: <span class="s">"curlr.dmg"</span>,
+  <span class="k">"ready"</span>: <span class="s">true</span>
+<span class="p">}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <a class="dlbtn" id="dl-link" href="#" download="curlr.dmg">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 3v11m0 0l-4-4m4 4l4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="meta">Download curlr for macOS<small>curlr.dmg · Apple Silicon · <span id="dl-size">7.3 MB</span></small></span>
+    </a>
+
+    <div class="steps">
+      <h2>Step-by-step: access the beta</h2>
+      <p class="sub">Takes about a minute. You'll only do step 3 for this beta.</p>
+      <ol class="steps-list">
+        <li>Download the <code class="inline">.dmg</code> file using the button above.</li>
+        <li>Double-click the downloaded <code class="inline">.dmg</code> file and drag <strong>curlr</strong> to the <strong>Applications</strong> folder, as shown in the video.</li>
+        <li>
+          Open a new Terminal window and run the following command:
+          <div class="cmd">
+            <code id="cmd-text"><span class="tok-cmd">xattr</span> <span class="tok-flag">-dr</span> com.apple.quarantine <span class="tok-path">/Applications/curlr.app</span></code>
+            <button class="copybtn" id="copybtn">Copy</button>
+          </div>
+          <div class="note"><strong>Note:</strong> this step is only required for the current beta build — it removes the quarantine flag macOS adds to unsigned apps. It will not be needed in the production release.</div>
+        </li>
+        <li>Done! You're all set to try out the curlr beta.</li>
+      </ol>
+      <div class="done-line">Found a bug or have feedback? <a href="feedback.html" style="color:var(--accent-green-bright);text-decoration:none;font-weight:600;border-bottom:1px solid rgba(66,191,118,.4)">Report it here →</a></div>
+    </div>
+  </section>
+
+  <footer><span class="slash">//</span>curlr · built for people who live in the terminal</footer>
+</div>
+<canvas id="confetti"></canvas>
+
+<script>
+(function () {
+  "use strict";
+
+  // Unlock instant: 4:00 PM IST on Aug 14, 2026  (== 10:30 UTC)
+  var TARGET = new Date("2026-08-14T16:00:00+05:30").getTime();
+  var DMG_URL = "curlr.dmg";
+
+  var params = new URLSearchParams(location.search);
+  var override = (params.get("preview") || "").toLowerCase(); // "live" | "countdown" | ""
+
+  var countdownView = document.getElementById("countdown-view");
+  var downloadView  = document.getElementById("download-view");
+
+  // ---- Trusted-time machinery -------------------------------------------
+  // We NEVER trust the local system clock to unlock. We anchor an authoritative
+  // timestamp to performance.now() (a monotonic clock the user can't wind
+  // forward). If we can't obtain trusted time, we FAIL CLOSED: stay locked and
+  // never inject the download URL. The local clock is used ONLY to keep the
+  // ticker moving visually until a trusted source answers.
+  var trustedBaseEpoch = null;
+  var trustedAnchorPerf = null;
+  var haveTrusted = false;
+
+  function nowTrusted() {
+    if (trustedBaseEpoch == null) return null;
+    return trustedBaseEpoch + (performance.now() - trustedAnchorPerf);
+  }
+  function nowDisplay() {
+    var t = nowTrusted();
+    return t == null ? Date.now() : t;
+  }
+  function withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise(function (_, rej) { setTimeout(function () { rej(new Error("timeout")); }, ms); })
+    ]);
+  }
+  function fromServerDateHeader() {
+    return withTimeout(fetch(location.href, { method: "HEAD", cache: "no-store" }), 4000)
+      .then(function (r) {
+        var d = r.headers.get("Date");
+        if (!d) throw new Error("no Date header");
+        var t = new Date(d).getTime();
+        if (!isFinite(t)) throw new Error("bad Date header");
+        return t;
+      });
+  }
+  function fromWorldTimeApi() {
+    return withTimeout(fetch("https://worldtimeapi.org/api/timezone/Etc/UTC", { cache: "no-store" }), 4500)
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var t = j.unixtime ? j.unixtime * 1000 : new Date(j.utc_datetime).getTime();
+        if (!isFinite(t)) throw new Error("bad worldtimeapi");
+        return t;
+      });
+  }
+  function fromTimeApiIo() {
+    return withTimeout(fetch("https://timeapi.io/api/Time/current/zone?timeZone=UTC", { cache: "no-store" }), 4500)
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var t = new Date(j.dateTime + "Z").getTime();
+        if (!isFinite(t)) throw new Error("bad timeapi.io");
+        return t;
+      });
+  }
+  function acquireTrustedTime() {
+    var sources = [fromServerDateHeader, fromWorldTimeApi, fromTimeApiIo];
+    var chain = Promise.reject();
+    sources.forEach(function (src) { chain = chain.catch(function () { return src(); }); });
+    return chain.then(function (epoch) {
+      trustedBaseEpoch = epoch; trustedAnchorPerf = performance.now(); haveTrusted = true; return true;
+    }).catch(function () { return false; });
+  }
+
+  // ---- Views -------------------------------------------------------------
+  function showDownload() {
+    var link = document.getElementById("dl-link");
+    if (link && link.getAttribute("href") !== DMG_URL) link.setAttribute("href", DMG_URL);
+    downloadView.classList.remove("hidden");
+    downloadView.classList.add("fadein");
+    countdownView.classList.add("hidden");
+    burstConfetti();
+  }
+  function showCountdown() {
+    countdownView.classList.remove("hidden");
+    downloadView.classList.add("hidden");
+  }
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function fmtRemaining(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    var d = Math.floor(s / 86400); s -= d * 86400;
+    var h = Math.floor(s / 3600);  s -= h * 3600;
+    var m = Math.floor(s / 60);    s -= m * 60;
+    return { d: d, h: h, m: m, s: s };
+  }
+
+  var cellD = document.getElementById("d"), cellH = document.getElementById("h"),
+      cellM = document.getElementById("m"), cellS = document.getElementById("s"),
+      elTminus = document.getElementById("tminus"),
+      elSrc = document.getElementById("timesrc");
+
+  function setCell(cell, val) {
+    var s = pad(val);
+    if (cell.dataset.v === s) return;      // only animate on real change
+    cell.dataset.v = s;
+    cell.querySelector(".num").textContent = s;
+    cell.classList.remove("tick"); void cell.offsetWidth; cell.classList.add("tick");
+  }
+
+  function renderCountdown() {
+    var r = fmtRemaining(TARGET - nowDisplay());
+    setCell(cellD, r.d); setCell(cellH, r.h); setCell(cellM, r.m); setCell(cellS, r.s);
+    var compact = r.d + "d " + pad(r.h) + ":" + pad(r.m) + ":" + pad(r.s);
+    if (elTminus) elTminus.textContent = compact;
+    var rem = document.getElementsByClassName("rem");
+    for (var i = 0; i < rem.length; i++) rem[i].textContent = compact;
+  }
+
+  var LOCK_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px;margin-right:5px" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" fill="#6e7781"/><path d="M8 11V8a4 4 0 018 0v3" stroke="#6e7781" stroke-width="2" fill="none"/></svg>';
+  function renderTimeSource() {
+    // if (haveTrusted) elSrc.innerHTML = LOCK_SVG + "Verified against network time — the clock can't be spoofed.";
+    // else elSrc.innerHTML = '<span class="warn">Verifying time…</span> download stays locked until a trusted source confirms.';
+  }
+
+  try {
+    document.getElementById("unlock-label").textContent =
+      new Intl.DateTimeFormat("en-US", {
+        weekday: "short", month: "short", day: "numeric", year: "numeric",
+        hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata"
+      }).format(new Date(TARGET)) + " IST";
+  } catch (e) {}
+
+  // ---- Terminal intro: type the command, then stream the response --------
+  function runTerminalIntro() {
+    var typed = document.getElementById("typed");
+    var stream = document.getElementById("stream");
+    var cursor = document.getElementById("cursor");
+    if (!typed || !stream) return;
+    var plain = " curlr GET https://api.curlr.dev/v1/beta/access --watch";
+    var colored = ' curlr <span class="url">GET https://api.curlr.dev<span class="path">/v1/beta/access</span></span> <span class="flag">--watch</span>';
+    function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+    var idx = 0;
+    function typeNext() {
+      if (idx >= plain.length) { typed.innerHTML = colored; setTimeout(streamResponse, 260); return; }
+      idx++;
+      typed.innerHTML = esc(plain.slice(0, idx)); // plain while typing — no broken markup
+      setTimeout(typeNext, 26 + Math.random() * 34);
+    }
+
+    var frames = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+    function streamResponse() {
+      var lines = [
+        { cls: "hdr spin", html: '<span class="spinner" id="spin">⠋</span> connecting to api.curlr.dev …' },
+        { after: 620, cls: "ok", html: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#42bf76" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> negotiated HTTP/2 · TLS 1.3' },
+        { after: 240, cls: "hdr", html: '<span class="status">&lt; HTTP/2 425</span> Too Early' },
+        { after: 200, cls: "hdr", html: '&lt; retry-after: <span class="rem">—</span>' },
+        { after: 200, cls: "hdr", html: '&lt; content-type: application/json' },
+        { after: 260, cls: "jsonblk", html:
+            '<span class="p">{</span>\n' +
+            '  <span class="k">"status"</span>: <span class="s">"locked"</span>,\n' +
+            '  <span class="k">"unlocks_at"</span>: <span class="s">"2026-08-14T16:00:00+05:30"</span>,\n' +
+            '  <span class="k">"unlocks_in"</span>: <span class="s">"<span class="rem">—</span>"</span>,\n' +
+            '  <span class="k">"ready"</span>: <span class="b">false</span>\n' +
+            '<span class="p">}</span>' }
+      ];
+      var spinTimer = null;
+      function addLine(i) {
+        if (i >= lines.length) return;
+        var L = lines[i];
+        var run = function () {
+          var div = document.createElement("div");
+          div.className = "ln " + (L.cls || "");
+          div.innerHTML = L.html;
+          stream.appendChild(div);
+          if (i === 0) {
+            // animate spinner briefly, then replace with "connected"
+            var sp = document.getElementById("spin"); var f = 0;
+            spinTimer = setInterval(function () { if (sp) sp.textContent = frames[(f = (f + 1) % frames.length)]; }, 80);
+            setTimeout(function () { clearInterval(spinTimer); }, 600);
+          }
+          renderCountdown(); // fill any .rem just added
+          addLine(i + 1);
+        };
+        setTimeout(run, L.after || 0);
+      }
+      addLine(0);
+    }
+    typeNext();
+  }
+
+  // ---- Confetti ----------------------------------------------------------
+  function burstConfetti() {
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var cv = document.getElementById("confetti");
+    var ctx = cv.getContext("2d");
+    var W = cv.width = innerWidth, H = cv.height = innerHeight;
+    var colors = ["#1d934e", "#42bf76", "#79adff", "#ffffff", "#e5a44d"];
+    var P = [];
+    for (var i = 0; i < 160; i++) {
+      P.push({ x: W / 2 + (Math.random() - .5) * 120, y: H * 0.28,
+        vx: (Math.random() - .5) * 10, vy: Math.random() * -12 - 4,
+        s: 4 + Math.random() * 6, rot: Math.random() * 6.28, vr: (Math.random() - .5) * .3,
+        c: colors[(Math.random() * colors.length) | 0], life: 0 });
+    }
+    var start = performance.now();
+    (function frame(now) {
+      var dt = 1; ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < P.length; i++) {
+        var p = P[i];
+        p.vy += 0.35; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.vx *= 0.99;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c;
+        ctx.globalAlpha = Math.max(0, 1 - (now - start) / 2600);
+        ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.5); ctx.restore();
+      }
+      if (now - start < 2600) requestAnimationFrame(frame); else ctx.clearRect(0, 0, W, H);
+    })(start);
+  }
+
+  // ---- Cursor spotlight --------------------------------------------------
+  var spot = document.getElementById("spotlight");
+  window.addEventListener("pointermove", function (e) {
+    spot.style.setProperty("--mx", e.clientX + "px");
+    spot.style.setProperty("--my", e.clientY + "px");
+  }, { passive: true });
+
+  // ---- Copy button (download view) --------------------------------------
+  var copyBtn = document.getElementById("copybtn");
+  if (copyBtn) copyBtn.addEventListener("click", function () {
+    var text = "xattr -dr com.apple.quarantine /Applications/curlr.app";
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+      .then(ok, ok);
+    function ok() { copyBtn.textContent = "Copied"; copyBtn.classList.add("done"); setTimeout(function(){ copyBtn.textContent = "Copy"; copyBtn.classList.remove("done"); }, 1600); }
+  });
+
+  // ---- Boot --------------------------------------------------------------
+  if (override === "live")      { showDownload(); return; }
+  if (override === "countdown") {
+    showCountdown(); runTerminalIntro();
+    setInterval(renderCountdown, 250); renderCountdown();
+    acquireTrustedTime().then(renderTimeSource); renderTimeSource();
+    return;
+  }
+
+  // Normal, tamper-resistant flow.
+  showCountdown(); renderCountdown(); renderTimeSource(); runTerminalIntro();
+
+  var unlocked = false;
+  function tick() {
+    renderCountdown();
+    var t = nowTrusted();
+    if (!unlocked && haveTrusted && t != null && t >= TARGET) { unlocked = true; showDownload(); }
+  }
+  setInterval(tick, 250);
+
+  function refreshTrust() {
+    acquireTrustedTime().then(function () {
+      renderTimeSource(); tick();
+      if (!haveTrusted) setTimeout(refreshTrust, 15000);
+    });
+  }
+  refreshTrust();
+  setInterval(function () { if (!unlocked) acquireTrustedTime().then(function(){ renderTimeSource(); tick(); }); }, 60000);
+})();
+</script>
+</body>
+</html>

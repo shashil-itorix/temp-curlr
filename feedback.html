@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<title>curlr — feedback</title>
+<meta name="description" content="Report a bug or request a feature for the curlr beta." />
+<style>
+  :root {
+    --surface-underground:#141414; --surface-card:#181818; --surface-ground:#1e1e1e;
+    --surface-l1:#252525; --surface-l2:#2d2d2d; --surface-input:#0e0e0e;
+    --stroke-subtle:#21262d; --stroke-default:#30363d; --stroke-strong:#464b53;
+    --text-primary:#e6edf3; --text-secondary:#8b949e; --text-tertiary:#6e7781;
+    --accent-green:#1d934e; --accent-green-bright:#42bf76; --accent-danger:#ff5252;
+    --method-post-text:#59e58c; --method-post-bg:#05240f;
+    --json-key:#79adff; --json-string:#a8c56b; --json-number:#e5a44d; --json-boolean:#c17ed6;
+    --font-mono:"Geist Mono","IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --font-sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --radius-md:8px; --radius-lg:12px; --radius-xl:16px;
+    --ease-out-expo:cubic-bezier(0.16,1,0.3,1);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html,body { height:100%; }
+  body {
+    background:var(--surface-underground); color:var(--text-primary);
+    font-family:var(--font-sans); -webkit-font-smoothing:antialiased;
+    height:100vh; overflow:hidden; position:relative;
+  }
+  body::before {
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(50vw 60vh at 78% 40%, rgba(29,147,78,0.16), transparent 70%),
+      radial-gradient(40vw 40vh at 10% 90%, rgba(66,191,118,0.07), transparent 70%),
+      linear-gradient(180deg, #101010 0%, #0c0c0c 100%);
+  }
+  body::after {
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.55;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size:44px 44px;
+    -webkit-mask-image:radial-gradient(90vw 90vh at 50% 50%, #000 30%, transparent 80%);
+            mask-image:radial-gradient(90vw 90vh at 50% 50%, #000 30%, transparent 80%);
+  }
+
+  .split { position:relative; z-index:1; height:100vh; display:grid; grid-template-columns:1fr 1fr; }
+
+  /* ============ LEFT: live request preview ============ */
+  .left { display:flex; flex-direction:column; padding:34px 40px; min-width:0; }
+  .brand { display:flex; align-items:center; gap:11px; }
+  .brand svg { width:28px; height:28px; border-radius:7px; }
+  .brand-name { font-family:var(--font-mono); font-weight:600; font-size:18px; letter-spacing:-.02em; }
+  .brand-name .slash { color:var(--accent-green-bright); }
+
+  .lead { margin-top:auto; }
+  .eyebrow { font-family:var(--font-mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent-green-bright); margin-bottom:14px; }
+  h1 { font-size:clamp(26px,3.2vw,40px); line-height:1.06; letter-spacing:-.03em; font-weight:700; margin-bottom:14px; }
+  h1 .dim { color:var(--text-secondary); }
+  .lede { font-size:15px; line-height:1.6; color:var(--text-secondary); max-width:420px; }
+
+  /* mock curlr window mirroring the form */
+  .window {
+    margin-top:26px; border:1px solid var(--stroke-default); border-radius:var(--radius-xl);
+    background:var(--surface-card); overflow:hidden; max-width:460px;
+    box-shadow:0 24px 60px -24px rgba(0,0,0,.7);
+  }
+  .titlebar { display:flex; align-items:center; gap:7px; height:34px; padding:0 13px; background:var(--surface-underground); border-bottom:1px solid var(--stroke-subtle); }
+  .dot { width:10px; height:10px; border-radius:50%; }
+  .dot.r{background:#ff5f57} .dot.y{background:#febc2e} .dot.g{background:#28c840}
+  .titlebar .t { margin-left:6px; font-family:var(--font-mono); font-size:11.5px; color:var(--text-tertiary); }
+  .reqrow { display:flex; align-items:center; gap:9px; padding:12px 13px; border-bottom:1px solid var(--stroke-subtle); }
+  .method { font-family:var(--font-mono); font-weight:600; font-size:11.5px; padding:5px 8px; border-radius:6px; color:var(--method-post-text); background:var(--method-post-bg); letter-spacing:.03em; }
+  .url { flex:1; font-family:var(--font-mono); font-size:12.5px; color:var(--text-primary); background:var(--surface-input); border:1px solid var(--stroke-subtle); padding:7px 11px; border-radius:7px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .url .path { color:var(--accent-green-bright); }
+  .bodyhdr { display:flex; align-items:center; gap:9px; padding:9px 13px; border-bottom:1px solid var(--stroke-subtle); font-family:var(--font-mono); font-size:11.5px; color:var(--text-tertiary); }
+  .bodyhdr .tag { color:var(--text-secondary); }
+  pre.json {
+    margin:0; padding:14px 15px; font-family:var(--font-mono); font-size:12.5px; line-height:1.7;
+    color:var(--text-secondary); white-space:pre-wrap; word-break:break-word; max-height:230px; overflow:auto;
+  }
+  .json .k{color:var(--json-key)} .json .s{color:var(--json-string)} .json .n{color:var(--json-number)} .json .b{color:var(--json-boolean)} .json .p{color:var(--text-tertiary)}
+  .leftfoot { margin-top:auto; padding-top:22px; font-family:var(--font-mono); font-size:11.5px; color:var(--text-tertiary); }
+  .leftfoot .slash { color:var(--accent-green); }
+
+  /* ============ RIGHT: the form ============ */
+  .right { position:relative; display:flex; flex-direction:column; padding:30px 44px; border-left:1px solid var(--stroke-subtle); background:linear-gradient(180deg, rgba(24,24,24,.55), rgba(20,20,20,.55)); min-width:0; overflow:hidden; }
+  .rtop { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .rtitle { font-size:17px; font-weight:700; letter-spacing:-.02em; }
+  .rtitle span { color:var(--text-tertiary); font-family:var(--font-mono); font-weight:400; font-size:13px; margin-left:6px; }
+  .back { font-family:var(--font-mono); font-size:12px; color:var(--text-secondary); text-decoration:none; border:1px solid var(--stroke-default); padding:6px 11px; border-radius:8px; transition:.15s; }
+  .back:hover { color:var(--text-primary); border-color:var(--stroke-strong); }
+
+  form { display:flex; flex-direction:column; gap:15px; }
+  .field { display:flex; flex-direction:column; gap:7px; }
+  label.q { font-size:13px; font-weight:600; color:var(--text-primary); }
+  label.q .req { color:var(--accent-danger); margin-left:2px; }
+  label.q .opt { color:var(--text-tertiary); font-weight:400; font-family:var(--font-mono); font-size:11px; margin-left:5px; }
+
+  input[type=text], input[type=email], textarea, select {
+    width:100%; font-family:var(--font-sans); font-size:14px; color:var(--text-primary);
+    background:var(--surface-input); border:1px solid var(--stroke-default); border-radius:var(--radius-md);
+    padding:10px 13px; transition:border-color .15s, box-shadow .15s; resize:none;
+  }
+  input::placeholder, textarea::placeholder { color:#5a6169; }
+  input:focus, textarea:focus, select:focus { outline:none; border-color:var(--accent-green); box-shadow:0 0 0 3px rgba(29,147,78,.18); }
+  textarea { min-height:88px; line-height:1.5; font-family:var(--font-mono); font-size:13px; }
+  select { appearance:none; -webkit-appearance:none; cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat:no-repeat; background-position:right 13px center; padding-right:34px; }
+
+  .seg { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+  .seg input { position:absolute; opacity:0; pointer-events:none; }
+  .seg label { display:flex; align-items:center; justify-content:center; gap:7px; padding:10px 8px; border:1px solid var(--stroke-default); border-radius:var(--radius-md); background:var(--surface-card); cursor:pointer; transition:.15s; font-size:13px; font-weight:500; }
+  .seg label:hover { border-color:var(--stroke-strong); }
+  .seg input:checked + label { border-color:var(--accent-green); background:rgba(29,147,78,.1); color:var(--text-primary); box-shadow:0 0 0 1px var(--accent-green) inset; }
+
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+  .submit { display:inline-flex; align-items:center; justify-content:center; gap:9px; font-family:var(--font-sans); font-weight:600; font-size:14.5px; color:#fff; background:var(--accent-green); border:none; padding:12px 20px; border-radius:var(--radius-md); cursor:pointer; transition:transform .16s var(--ease-out-expo), box-shadow .16s, opacity .16s; box-shadow:0 12px 28px -12px rgba(29,147,78,.7); margin-top:2px; }
+  .submit:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 16px 34px -12px rgba(29,147,78,.85); }
+  .submit:disabled { opacity:.55; cursor:not-allowed; }
+  .submit .spin { width:15px; height:15px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:sp .7s linear infinite; display:none; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+
+  .configwarn { display:none; font-family:var(--font-mono); font-size:11.5px; line-height:1.55; color:#ffce7a; background:rgba(255,184,51,.08); border:1px solid rgba(255,184,51,.3); padding:11px 13px; border-radius:var(--radius-md); margin-bottom:16px; }
+  .configwarn code { color:#fff; }
+
+  /* success overlay (fills right column, still no page scroll) */
+  .success { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; background:linear-gradient(180deg, rgba(20,20,20,.85), rgba(16,16,16,.92)); backdrop-filter:blur(3px); }
+  .success .check { width:66px; height:66px; margin-bottom:22px; border-radius:50%; display:grid; place-items:center; background:rgba(29,147,78,.14); border:1px solid rgba(66,191,118,.35); }
+  .success .check svg { width:32px; height:32px; }
+  .success h2 { font-size:23px; letter-spacing:-.02em; margin-bottom:10px; }
+  .success p { color:var(--text-secondary); font-size:14.5px; line-height:1.6; max-width:360px; margin:0 auto 22px; }
+  .success .again { font-family:var(--font-mono); font-size:13px; color:var(--accent-green-bright); background:none; border:1px solid rgba(66,191,118,.35); padding:9px 15px; border-radius:8px; cursor:pointer; }
+
+  /* stack on narrow / short screens (allow scroll there — desktop stays fixed) */
+  @media (max-width:900px), (max-height:620px) {
+    body { height:auto; overflow:auto; }
+    .split { grid-template-columns:1fr; height:auto; }
+    .right { border-left:none; border-top:1px solid var(--stroke-subtle); }
+    .left .window { display:none; }
+    .lead { margin-top:24px; }
+  }
+</style>
+</head>
+<body>
+<div class="split">
+  <!-- ============ LEFT ============ -->
+  <div class="left">
+    <div class="brand">
+      <svg viewBox="0 0 16.1538 16.1538" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="16.1538" height="16.1538" rx="3.6" fill="url(#g)"/>
+        <path d="M3.80112 12.0846L6.60988 4.06708H7.80829L4.99953 12.0846H3.80112Z" fill="#fff"/>
+        <path d="M8.34599 12.0846L11.1547 4.06708H12.3532L9.54439 12.0846H8.34599Z" fill="#fff"/>
+        <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="16.1538" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#33B865"/><stop offset="1" stop-color="#1D934E"/>
+        </linearGradient></defs>
+      </svg>
+      <span class="brand-name"><span class="slash">//</span>curlr</span>
+    </div>
+
+    <div class="lead">
+      <div class="eyebrow">Beta feedback</div>
+      <h1>Every report<br><span class="dim">ships the next build.</span></h1>
+      <p class="lede">Found a bug or have an idea? Compose it on the right — it goes straight to the team, no account needed.</p>
+
+      <div class="window" aria-hidden="true">
+        <div class="titlebar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="t">curlr — new request</span></div>
+        <div class="reqrow">
+          <span class="method">POST</span>
+          <span class="url">https://curlr.dev<span class="path">/v1/feedback</span></span>
+        </div>
+        <div class="bodyhdr"><span class="tag">Body</span> · application/json <span id="live-dot" style="margin-left:auto;color:var(--accent-green-bright)">● live</span></div>
+        <pre class="json" id="live-json"></pre>
+      </div>
+    </div>
+
+    <div class="leftfoot"><span class="slash">//</span> curlr 0.1.0 beta · aarch64</div>
+  </div>
+
+  <!-- ============ RIGHT ============ -->
+  <div class="right">
+    <div class="rtop">
+      <div class="rtitle">Report a bug or feature <span></span></div>
+      <a class="back" href="index.html">← Back</a>
+    </div>
+
+    <div class="configwarn" id="configwarn"></div>
+
+    <form id="fb-form" novalidate>
+      <div class="field">
+        <label class="q">Type<span class="req">*</span></label>
+        <div class="seg" id="seg">
+          <input type="radio" name="type" id="t-bug" value="Bug" checked>
+          <label for="t-bug"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 8a4 4 0 014 4v2a4 4 0 01-8 0v-2a4 4 0 014-4z" stroke="currentColor" stroke-width="1.7"/><path d="M9 8.5V7a3 3 0 016 0v1.5M4 12h4m8 0h4M5 8l2.5 1.5M19 8l-2.5 1.5M5 17l2.6-1.5M19 17l-2.6-1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>Bug</label>
+          <input type="radio" name="type" id="t-feat" value="Feature request">
+          <label for="t-feat"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l1.9 6.1L20 11l-6.1 1.9L12 19l-1.9-6.1L4 11l6.1-1.9L12 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Feature</label>
+          <input type="radio" name="type" id="t-other" value="Other">
+          <label for="t-other"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 15a2 2 0 01-2 2H8l-4 4V6a2 2 0 012-2h12a2 2 0 012 2v9z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>Other</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="q" for="summary">Summary<span class="req">*</span></label>
+        <input type="text" id="summary" name="summary" maxlength="120" placeholder="One line: what happened or what you'd like" required>
+      </div>
+
+      <div class="field">
+        <label class="q" for="details" id="details-label">Steps to reproduce / details<span class="req">*</span></label>
+        <textarea id="details" name="details" placeholder="1. Open a request tab\n2. Press ⌘↵\n3. Expected: …  Actual: …" required></textarea>
+      </div>
+
+      <div class="row2">
+        <div class="field" id="sev-field">
+          <label class="q" for="severity">Severity <span class="opt">bugs</span></label>
+          <select id="severity" name="severity">
+            <option value="Low">Low — minor annoyance</option>
+            <option value="Medium" selected>Medium — worth fixing</option>
+            <option value="High">High — blocks my work</option>
+            <option value="Critical">Critical — crash / data loss</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="q" for="email">Email </label>
+          <input type="email" id="email" name="email" placeholder="you@example.com">
+        </div>
+      </div>
+
+      <button type="submit" class="submit" id="submit-btn">
+        <span class="spin" id="spin"></span>
+        <span id="submit-label">Send feedback →</span>
+      </button>
+    </form>
+
+    <div class="success" id="success">
+      <div class="check"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#42bf76" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h2>Feedback sent. Thank you!</h2>
+      <p>Your report landed with the team. If you left an email, we'll follow up when there's news.</p>
+      <button class="again" id="send-again">Send another →</button>
+    </div>
+  </div>
+</div>
+
+<iframe name="gform-sink" style="display:none" aria-hidden="true"></iframe>
+
+<script>
+  var GFORM = {
+    FORM_ID: "1FAIpQLScegnS7SIxxYvtGwROullYK-RiGSTW7GVkfP2jsv40umTdlRg",
+    ENTRY: {
+      type:     "entry.1508561384",
+      summary:  "entry.1633362259",
+      details:  "entry.1088116950",
+      severity: "entry.1475969014",
+      email:    "entry.969218607",
+      version:  "entry.798343041"
+    }
+  };
+  var VERSION_STRING = "0.1.0 beta (aarch64)";
+/* ========================================================================== */
+
+(function () {
+  "use strict";
+  var form = document.getElementById("fb-form");
+  var success = document.getElementById("success");
+  var btn = document.getElementById("submit-btn");
+  var spin = document.getElementById("spin");
+  var submitLabel = document.getElementById("submit-label");
+  var warn = document.getElementById("configwarn");
+  var details = document.getElementById("details");
+  var detailsLabel = document.getElementById("details-label");
+  var sevField = document.getElementById("sev-field");
+  var liveJson = document.getElementById("live-json");
+
+  var configured = GFORM.FORM_ID && !/^entry\.0000/.test(GFORM.ENTRY.summary);
+  if (!configured) {
+    warn.style.display = "block";
+    warn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px;margin-right:6px" aria-hidden="true"><path d="M12 3l9 16H3L12 3z" stroke="#ffce7a" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4m0 3h.01" stroke="#ffce7a" stroke-width="1.8" stroke-linecap="round"/></svg><strong>Setup:</strong> not wired to a Google Form yet — fill the <code>GFORM</code> config in <code>feedback.html</code>. Submit is disabled until then.';
+    btn.disabled = true;
+    submitLabel.textContent = "Connect a Google Form to enable";
+  }
+
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function currentType(){ return document.querySelector('input[name=type]:checked').value; }
+
+  // Live JSON preview mirroring the form
+  function renderJson() {
+    var type = currentType();
+    var summary = form.summary.value.trim();
+    var det = details.value.trim();
+    var sev = form.severity.value;
+    var email = form.email.value.trim();
+    var rows = [];
+    rows.push('  <span class="k">"type"</span>: <span class="s">"' + esc(type) + '"</span>,');
+    rows.push('  <span class="k">"summary"</span>: <span class="s">"' + (summary ? esc(summary) : '<span class="p">…</span>') + '"</span>,');
+    rows.push('  <span class="k">"details"</span>: <span class="s">"' + (det ? esc(det.length>60?det.slice(0,60)+"…":det) : '<span class="p">…</span>') + '"</span>,');
+    if (type === "Bug") rows.push('  <span class="k">"severity"</span>: <span class="s">"' + esc(sev) + '"</span>,');
+    rows.push('  <span class="k">"email"</span>: ' + (email ? '<span class="s">"'+esc(email)+'"</span>' : '<span class="b">null</span>') + ',');
+    rows.push('  <span class="k">"version"</span>: <span class="s">"' + esc(VERSION_STRING) + '"</span>');
+    liveJson.innerHTML = '<span class="p">{</span>\n' + rows.join("\n") + '\n<span class="p">}</span>';
+  }
+
+  // Contextual copy per type
+  function applyType() {
+    var v = currentType();
+    if (v === "Bug") {
+      detailsLabel.innerHTML = 'Steps to reproduce / details<span class="req">*</span>';
+      details.placeholder = "1. Open a request tab\n2. Press ⌘↵\n3. Expected: …  Actual: …";
+      sevField.style.opacity = "1"; sevField.style.pointerEvents = "auto";
+    } else if (v === "Feature request") {
+      detailsLabel.innerHTML = 'What would you like, and why?<span class="req">*</span>';
+      details.placeholder = "I wish curlr could … so that I can …";
+      sevField.style.opacity = ".4"; sevField.style.pointerEvents = "none";
+    } else {
+      detailsLabel.innerHTML = 'Details<span class="req">*</span>';
+      details.placeholder = "Anything on your mind — praise, confusion, a rough edge …";
+      sevField.style.opacity = ".4"; sevField.style.pointerEvents = "none";
+    }
+    renderJson();
+  }
+
+  form.addEventListener("input", renderJson);
+  document.getElementById("seg").addEventListener("change", applyType);
+  applyType();
+
+  function buildBody() {
+    var data = new URLSearchParams();
+    var map = [
+      ["type", currentType()],
+      ["summary", form.summary.value.trim()],
+      ["details", details.value.trim()],
+      ["severity", form.severity.value],
+      ["email", form.email.value.trim()],
+      ["version", VERSION_STRING]
+    ];
+    map.forEach(function (p) { var key = GFORM.ENTRY[p[0]]; if (key && p[1]) data.append(key, p[1]); });
+    return data;
+  }
+  function setLoading(on) {
+    btn.disabled = on;
+    spin.style.display = on ? "inline-block" : "none";
+    submitLabel.textContent = on ? "Sending…" : "Send feedback →";
+  }
+
+  var finished = false;
+  function done() {
+    if (finished) return; finished = true;
+    setLoading(false);
+    success.style.display = "flex";
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!configured) return;
+    if (!form.summary.value.trim() || !details.value.trim()) {
+      (form.summary.value.trim() ? details : form.summary).focus();
+      return;
+    }
+    setLoading(true);
+    var action = "https://docs.google.com/forms/d/e/" + GFORM.FORM_ID + "/formResponse";
+    fetch(action, {
+      method: "POST", mode: "no-cors",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: buildBody().toString()
+    }).then(done).catch(done);
+    setTimeout(done, 2500); // safety net for flaky networks
+  });
+
+  document.getElementById("send-again").addEventListener("click", function () {
+    finished = false; form.reset(); applyType();
+    success.style.display = "none";
+  });
+})();
+</script>
+</body>
+</html>
