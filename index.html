@@ -4,8 +4,8 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-<title>curlr — beta</title>
-<meta name="description" content="curlr — a fast, keyboard-first API client for macOS. Beta unlocks Aug 14, 2026 · 4:00 PM IST." />
+<title>curlr — download</title>
+<meta name="description" content="Download curlr — a fast, keyboard-first API client for macOS, Windows, and Linux. Always the latest beta build." />
 <style>
   :root {
     --surface-underground:#141414; --surface-card:#181818; --surface-ground:#1e1e1e;
@@ -157,6 +157,48 @@
   .dlbtn .meta { display:flex; flex-direction:column; align-items:flex-start; line-height:1.2; position:relative; z-index:1; }
   .dlbtn .meta small { font-weight:400; opacity:.82; font-size:12px; font-family:var(--font-mono); }
 
+  /* platform segmented control */
+  .os-tabs { display:inline-flex; gap:4px; margin:24px 0 18px; padding:4px; background:var(--surface-card); border:1px solid var(--stroke-subtle); border-radius:12px; }
+  .os-tabs button {
+    display:inline-flex; align-items:center; gap:7px; font-family:var(--font-sans); font-size:13.5px; font-weight:600;
+    color:var(--text-secondary); background:transparent; border:0; padding:8px 15px; border-radius:9px; cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .os-tabs button svg { width:15px; height:15px; opacity:.9; }
+  .os-tabs button:hover:not([disabled]) { color:var(--text-primary); }
+  .os-tabs button.active { color:#fff; background:var(--surface-l2); box-shadow:0 1px 0 rgba(255,255,255,.05) inset; }
+  .os-tabs button[disabled] { opacity:.34; cursor:not-allowed; }
+  .os-tabs button.detected::after {
+    content:"you"; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; color:var(--accent-green-bright);
+    background:rgba(29,147,78,.16); padding:2px 5px; border-radius:5px;
+  }
+
+  /* alternate-format links under the primary button */
+  .dl-sub { display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+  .dl-sub a {
+    display:inline-flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:12.5px; color:var(--text-secondary);
+    text-decoration:none; background:var(--surface-card); border:1px solid var(--stroke-default); padding:8px 13px; border-radius:9px;
+    transition:border-color .15s, color .15s, transform .15s;
+  }
+  .dl-sub a:hover { color:var(--text-primary); border-color:var(--stroke-strong); transform:translateY(-1px); }
+  .dl-sub a .sz { color:var(--text-tertiary); }
+
+  .verline { margin-top:16px; font-family:var(--font-mono); font-size:12.5px; color:var(--text-tertiary); }
+  .verline b { color:var(--text-secondary); font-weight:600; }
+  .verline .tag { color:var(--accent-green-bright); font-weight:600; }
+  .verline a { text-decoration:none; }
+  .verline a:hover { color:var(--text-primary); }
+
+  .dl-loading { display:flex; align-items:center; gap:11px; margin-top:6px; font-family:var(--font-mono); font-size:13px; color:var(--text-secondary); }
+  .dl-loading .sp { width:15px; height:15px; border:2px solid var(--stroke-strong); border-top-color:var(--accent-green-bright); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .dl-error { margin-top:6px; font-size:14px; line-height:1.55; color:var(--text-secondary); background:rgba(255,82,82,.06); border-left:2px solid var(--accent-danger); padding:12px 15px; border-radius:0 8px 8px 0; }
+  .dl-error a { color:var(--accent-green-bright); text-decoration:none; font-weight:600; }
+
+  /* per-OS install step panels */
+  .os-steps { display:none; }
+  .os-steps.active { display:block; }
+
   .preview { margin:34px 0; border:1px solid var(--stroke-default); border-radius:var(--radius-xl); overflow:hidden; background:#000; }
   .preview video { display:block; width:100%; height:auto; }
 
@@ -255,53 +297,108 @@
     <div class="eyebrow" style="display:flex;align-items:center;gap:8px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l1.9 6.6L20 10l-6.1 1.4L12 18l-1.9-6.6L4 10l6.1-1.4L12 2z" fill="#42bf76"/></svg>
       Beta is live</div>
-    <h1>You're in.<br><span class="dim">Grab curlr for macOS.</span></h1>
-    <p class="lede">The beta just went live. Download the build below and follow the four quick steps to run it.</p>
+    <h1>You're in.<br><span class="dim">Grab the latest curlr build.</span></h1>
+    <p class="lede">Pick your platform below. Every build ships a signed auto-updater — so this is the last time you'll download by hand.</p>
 
-    <div class="terminal" style="margin-bottom:28px;">
+    <div class="terminal" style="margin:26px 0 4px;">
       <div class="titlebar">
         <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-        <span class="t">curlr — beta.watch</span>
+        <span class="t">curlr — releases</span>
         <span class="badge" style="color:var(--accent-green-bright);background:rgba(29,147,78,.14)">200 OK</span>
       </div>
       <div class="term-body">
-        <div><span class="prompt">$</span> curlr <span class="url">GET https://api.curlr.dev<span class="path">/v1/beta/access</span></span> <span class="flag">--watch</span></div>
+        <div><span class="prompt">$</span> curlr <span class="url">GET https://api.curlr.dev<span class="path">/v1/beta/access</span></span></div>
         <div class="stream">
           <div class="ln ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="vertical-align:-1px" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="#42bf76" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg> 200 OK · unlocked · application/json</div>
           <div class="ln jsonblk"><span class="p">{</span>
   <span class="k">"status"</span>: <span class="s">"unlocked"</span>,
-  <span class="k">"platform"</span>: <span class="s">"macOS · Apple Silicon"</span>,
-  <span class="k">"artifact"</span>: <span class="s">"curlr.dmg"</span>,
-  <span class="k">"ready"</span>: <span class="s">true</span>
+  <span class="k">"platform"</span>: <span class="s">"<span id="tp">your OS</span>"</span>,
+  <span class="k">"version"</span>: <span class="s">"<span id="tv">—</span>"</span>,
+  <span class="k">"artifact"</span>: <span class="s">"<span id="ta">—</span>"</span>,
+  <span class="k">"ready"</span>: <span class="b">true</span>
 <span class="p">}</span></div>
         </div>
       </div>
     </div>
 
-    <a class="dlbtn" id="dl-link" href="#" download="curlr.dmg">
-      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 3v11m0 0l-4-4m4 4l4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span class="meta">Download curlr for macOS<small>curlr.dmg · Apple Silicon · <span id="dl-size">7.3 MB</span></small></span>
-    </a>
+    <!-- platform picker -->
+    <div class="os-tabs" id="os-tabs" role="tablist" aria-label="Choose your platform">
+      <button type="button" data-os="mac"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.7 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.9-3-.8-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .7 1.1 1.6 2.3 2.7 2.2 1.1 0 1.5-.7 2.8-.7 1.3 0 1.6.7 2.8.7 1.1 0 1.9-1.1 2.6-2.2.5-.8.9-1.6 1.1-2.4-.1 0-2.1-.8-2.1-3.1zM14.5 5.4c.6-.7 1-1.7.9-2.7-.9 0-2 .6-2.6 1.3-.6.6-1.1 1.6-1 2.6 1 .1 2-.5 2.7-1.2z"/></svg>macOS</button>
+      <button type="button" data-os="windows"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.1l7.5-1v7.3H3V5.1zM3 18.9l7.5 1v-7.2H3v6.2zM11.3 4l9.7-1.3v8.7h-9.7V4zM11.3 20l9.7 1.3v-8.6h-9.7V20z"/></svg>Windows</button>
+      <button type="button" data-os="linux"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c-1.9 0-3.1 1.7-3.1 3.7 0 1 .1 1.6.1 2.4 0 1.2-1.4 2.6-2.3 4.2-.9 1.5-1.8 3.1-1.3 4.2.3.6.9.6 1.3.8.4.3.4 1 .9 1.3.8.4 4.4.4 5.4.4s4.6 0 5.4-.4c.5-.3.5-1 .9-1.3.4-.2 1-.2 1.3-.8.5-1.1-.4-2.7-1.3-4.2-.9-1.6-2.3-3-2.3-4.2 0-.8.1-1.4.1-2.4C15.1 3.7 13.9 2 12 2zm-1.6 3.1c.4 0 .7.4.7.9s-.3.9-.7.9-.7-.4-.7-.9.3-.9.7-.9zm3.2 0c.4 0 .7.4.7.9s-.3.9-.7.9-.7-.4-.7-.9.3-.9.7-.9zM12 7.6c.8 0 2 .5 2 1 0 .3-1.2.9-2 .9s-2-.6-2-.9c0-.5 1.2-1 2-1z"/></svg>Linux</button>
+    </div>
+
+    <div id="dl-live">
+      <div class="dl-loading" id="dl-loading"><span class="sp"></span> Fetching the latest release…</div>
+
+      <div id="dl-ready" class="hidden">
+        <a class="dlbtn" id="dl-link" href="#" download>
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 3v11m0 0l-4-4m4 4l4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 17v2a1 1 0 001 1h14a1 1 0 001-1v-2" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="meta">Download for <span id="dl-os-name">macOS</span><small id="dl-asset">—</small></span>
+        </a>
+        <div class="dl-sub" id="dl-sub"></div>
+        <div class="verline" id="verline"></div>
+      </div>
+
+      <div class="dl-error hidden" id="dl-fail">
+        Couldn't reach GitHub to list the latest build.
+        <a href="https://github.com/shashilsravan/curlr-releases/releases/latest" target="_blank" rel="noopener">Open the releases page ↗</a>
+      </div>
+    </div>
 
     <div class="steps">
-      <h2>Step-by-step: access the beta</h2>
-      <p class="sub">Takes about a minute. You'll only do step 3 for this beta.</p>
-      <ol class="steps-list">
-        <li>Download the <code class="inline">.dmg</code> file using the button above.</li>
-        <li>Double-click the downloaded <code class="inline">.dmg</code> file and drag <strong>curlr</strong> to the <strong>Applications</strong> folder, as shown in the video.</li>
-        <li>
-          Open a new Terminal window and run the following command:
-          <div class="cmd">
-            <code id="cmd-text"><span class="tok-cmd">xattr</span> <span class="tok-flag">-dr</span> com.apple.quarantine <span class="tok-path">/Applications/curlr.app</span></code>
-            <button class="copybtn" id="copybtn">Copy</button>
-          </div>
-          <div class="note"><strong>Note:</strong> this step is only required for the current beta build — it removes the quarantine flag macOS adds to unsigned apps. It will not be needed in the production release.</div>
-        </li>
-        <li>Done! You're all set to try out the curlr beta.</li>
-      </ol>
+      <h2>Install curlr</h2>
+      <p class="sub">A minute, tops — the extra steps are only because the beta isn't OS-signed yet.</p>
+
+      <div class="os-steps" id="steps-mac">
+        <ol class="steps-list">
+          <li>Download the <code class="inline">.dmg</code> using the button above.</li>
+          <li>Open it and drag <strong>curlr</strong> into your <strong>Applications</strong> folder.</li>
+          <li>
+            Clear the quarantine flag macOS adds to unsigned apps — run this once in Terminal:
+            <div class="cmd">
+              <code><span class="tok-cmd">xattr</span> <span class="tok-flag">-dr</span> com.apple.quarantine <span class="tok-path">/Applications/curlr.app</span></code>
+              <button class="copybtn" data-copy="xattr -dr com.apple.quarantine /Applications/curlr.app">Copy</button>
+            </div>
+          </li>
+          <li>Launch <strong>curlr</strong> from Applications. Done — future updates install themselves.</li>
+        </ol>
+      </div>
+
+      <div class="os-steps" id="steps-windows">
+        <ol class="steps-list">
+          <li>Download the <code class="inline">-setup.exe</code> installer using the button above.</li>
+          <li>Run it. If <strong>Windows SmartScreen</strong> flags an unknown publisher, click <strong>More info → Run anyway</strong> — the beta isn't code-signed yet.</li>
+          <li>Finish the installer, then open <strong>curlr</strong> from the Start menu.</li>
+          <li>Done — future updates install themselves.</li>
+        </ol>
+      </div>
+
+      <div class="os-steps" id="steps-linux">
+        <ol class="steps-list">
+          <li>Download the <code class="inline">.AppImage</code> above (or the <code class="inline">.deb</code> under it).</li>
+          <li>
+            Make the AppImage executable:
+            <div class="cmd">
+              <code><span class="tok-cmd">chmod</span> <span class="tok-flag">+x</span> <span class="tok-path">curlr_*.AppImage</span></code>
+              <button class="copybtn" data-copy="chmod +x curlr_*.AppImage">Copy</button>
+            </div>
+          </li>
+          <li>
+            Run it:
+            <div class="cmd">
+              <code><span class="tok-path">./curlr_*.AppImage</span></code>
+              <button class="copybtn" data-copy="./curlr_*.AppImage">Copy</button>
+            </div>
+            <div class="note">Prefer a package install? Use the <strong>.deb</strong>: <code class="inline">sudo dpkg -i curlr_*.deb</code></div>
+          </li>
+          <li>Done — future updates install themselves.</li>
+        </ol>
+      </div>
+
       <div class="done-line">Found a bug or have feedback? <a href="feedback.html" style="color:var(--accent-green-bright);text-decoration:none;font-weight:600;border-bottom:1px solid rgba(66,191,118,.4)">Report it here →</a></div>
     </div>
   </section>
@@ -316,7 +413,12 @@
 
   // Unlock instant: 4:00 PM IST on Aug 14, 2026  (== 10:30 UTC)
   var TARGET = new Date("2026-08-14T16:00:00+05:30").getTime();
-  var DMG_URL = "curlr.dmg";
+
+  // Downloads are pulled live from the public releases repo (source stays private).
+  var RELEASES_REPO = "shashilsravan/curlr-releases";
+  var API_LATEST    = "https://api.github.com/repos/" + RELEASES_REPO + "/releases/latest";
+  var RELEASES_PAGE = "https://github.com/" + RELEASES_REPO + "/releases";
+  var OS_NAME = { mac: "macOS", windows: "Windows", linux: "Linux" };
 
   var params = new URLSearchParams(location.search);
   var override = (params.get("preview") || "").toLowerCase(); // "live" | "countdown" | ""
@@ -387,12 +489,12 @@
 
   // ---- Views -------------------------------------------------------------
   function showDownload() {
-    var link = document.getElementById("dl-link");
-    if (link && link.getAttribute("href") !== DMG_URL) link.setAttribute("href", DMG_URL);
     downloadView.classList.remove("hidden");
     downloadView.classList.add("fadein");
     countdownView.classList.add("hidden");
-    burstConfetti();
+    // celebrate once per browser, not on every visit
+    try { if (!localStorage.getItem("curlr_seen")) { burstConfetti(); localStorage.setItem("curlr_seen", "1"); } } catch (e) {}
+    fetchLatest();
   }
   function showCountdown() {
     countdownView.classList.remove("hidden");
@@ -537,17 +639,152 @@
     spot.style.setProperty("--my", e.clientY + "px");
   }, { passive: true });
 
-  // ---- Copy button (download view) --------------------------------------
-  var copyBtn = document.getElementById("copybtn");
-  if (copyBtn) copyBtn.addEventListener("click", function () {
-    var text = "xattr -dr com.apple.quarantine /Applications/curlr.app";
-    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
-      .then(ok, ok);
-    function ok() { copyBtn.textContent = "Copied"; copyBtn.classList.add("done"); setTimeout(function(){ copyBtn.textContent = "Copy"; copyBtn.classList.remove("done"); }, 1600); }
+  // ---- Live downloads from the releases repo ----------------------------
+  var builds = null, releaseTag = "", releaseDate = null;
+
+  function detectOS() {
+    var uad = navigator.userAgentData && navigator.userAgentData.platform;
+    var s = ((uad || navigator.platform || "") + " " + (navigator.userAgent || "")).toLowerCase();
+    if (s.indexOf("win") >= 0) return "windows";
+    if (s.indexOf("android") < 0 && s.indexOf("linux") >= 0) return "linux";
+    return "mac";
+  }
+  function fmtSize(b) { if (!b) return ""; var mb = b / 1048576; return (mb >= 10 ? Math.round(mb) : mb.toFixed(1)) + " MB"; }
+  function endsWith(s, x) { return s.slice(-x.length) === x; }
+
+  // map a release asset to {os, kind, primary}; ignore updater/signature/meta files
+  function classifyAsset(name) {
+    var n = name.toLowerCase();
+    if (endsWith(n, ".sig") || endsWith(n, ".json") || n.indexOf(".app.tar.gz") >= 0) return null;
+    if (endsWith(n, ".dmg"))        return { os: "mac",     kind: "dmg",      primary: true };
+    if (endsWith(n, "-setup.exe"))  return { os: "windows", kind: "exe",      primary: true };
+    if (endsWith(n, ".exe"))        return { os: "windows", kind: "exe",      primary: true };
+    if (endsWith(n, ".msi"))        return { os: "windows", kind: "msi",      primary: false };
+    if (endsWith(n, ".appimage"))   return { os: "linux",   kind: "AppImage", primary: true };
+    if (endsWith(n, ".deb"))        return { os: "linux",   kind: "deb",      primary: false };
+    if (endsWith(n, ".rpm"))        return { os: "linux",   kind: "rpm",      primary: false };
+    return null;
+  }
+
+  function fetchLatest() {
+    var loading = document.getElementById("dl-loading");
+    var ready   = document.getElementById("dl-ready");
+    var fail    = document.getElementById("dl-fail");
+    loading.classList.remove("hidden"); ready.classList.add("hidden"); fail.classList.add("hidden");
+
+    // short-lived cache so refreshes don't burn the 60/hr anonymous API budget
+    try {
+      var c = JSON.parse(sessionStorage.getItem("curlr_rel") || "null");
+      if (c && Date.now() - c.t < 300000) { render(c.d); return; }
+    } catch (e) {}
+
+    fetch(API_LATEST, { headers: { Accept: "application/vnd.github+json" }, cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) {
+        try { sessionStorage.setItem("curlr_rel", JSON.stringify({ t: Date.now(), d: d })); } catch (e) {}
+        render(d);
+      })
+      .catch(function () { loading.classList.add("hidden"); fail.classList.remove("hidden"); });
+
+    function render(data) {
+      builds = { mac: { primary: null, alts: [] }, windows: { primary: null, alts: [] }, linux: { primary: null, alts: [] } };
+      releaseTag = data.tag_name || "";
+      releaseDate = data.published_at ? new Date(data.published_at) : null;
+      (data.assets || []).forEach(function (a) {
+        var k = classifyAsset(a.name); if (!k) return;
+        var entry = { name: a.name, url: a.browser_download_url, size: a.size, kind: k.kind };
+        var b = builds[k.os];
+        if (k.primary && !b.primary) b.primary = entry; else b.alts.push(entry);
+      });
+      // if a platform only shipped a secondary format, promote it so it's still
+      // offered; and order the remaining alternates by how common they are
+      var RANK = { deb: 1, msi: 1, rpm: 2 };
+      ["mac", "windows", "linux"].forEach(function (os) {
+        var b = builds[os];
+        if (!b.primary && b.alts.length) b.primary = b.alts.shift();
+        b.alts.sort(function (x, y) { return (RANK[x.kind] || 9) - (RANK[y.kind] || 9); });
+      });
+
+      if (!(builds.mac.primary || builds.windows.primary || builds.linux.primary)) {
+        loading.classList.add("hidden"); fail.classList.remove("hidden"); return;
+      }
+
+      renderVersion();
+      setupTabs();
+      var det = detectOS();
+      var initial = (builds[det] && builds[det].primary) ? det
+                  : builds.mac.primary ? "mac" : builds.windows.primary ? "windows" : "linux";
+      selectOS(initial);
+      loading.classList.add("hidden"); ready.classList.remove("hidden");
+    }
+  }
+
+  function renderVersion() {
+    var el = document.getElementById("verline"); if (!el) return;
+    var parts = [];
+    if (releaseTag) parts.push('<span class="tag">' + releaseTag + '</span>');
+    if (releaseDate) parts.push('released <b>' +
+      new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(releaseDate) + '</b>');
+    parts.push('<a href="' + RELEASES_PAGE + '" target="_blank" rel="noopener" style="color:var(--text-secondary)">all releases ↗</a>');
+    el.innerHTML = parts.join(" · ");
+  }
+
+  function setupTabs() {
+    var det = detectOS();
+    [].forEach.call(document.querySelectorAll("#os-tabs button"), function (btn) {
+      var os = btn.getAttribute("data-os");
+      var has = !!(builds[os] && builds[os].primary);
+      btn.disabled = !has;
+      btn.classList.toggle("detected", os === det && has);
+      btn.onclick = function () { if (has) selectOS(os); };
+    });
+  }
+
+  function subLink(label, url, name, size) {
+    var a = document.createElement("a");
+    a.href = url; a.setAttribute("download", ""); a.title = name;
+    a.innerHTML = "↓ " + label + (size ? ' <span class="sz">' + fmtSize(size) + "</span>" : "");
+    return a;
+  }
+
+  function selectOS(os) {
+    var b = builds[os]; if (!b || !b.primary) return;
+    [].forEach.call(document.querySelectorAll("#os-tabs button"), function (x) {
+      x.classList.toggle("active", x.getAttribute("data-os") === os);
+    });
+    var p = b.primary;
+    var link = document.getElementById("dl-link");
+    link.setAttribute("href", p.url); link.setAttribute("download", "");
+    document.getElementById("dl-os-name").textContent = OS_NAME[os];
+    document.getElementById("dl-asset").textContent = p.name + (p.size ? " · " + fmtSize(p.size) : "");
+
+    var sub = document.getElementById("dl-sub"); sub.innerHTML = "";
+    b.alts.forEach(function (a) { sub.appendChild(subLink(a.kind.toUpperCase(), a.url, a.name, a.size)); });
+
+    ["mac", "windows", "linux"].forEach(function (o) {
+      var s = document.getElementById("steps-" + o); if (s) s.classList.toggle("active", o === os);
+    });
+
+    var tp = document.getElementById("tp"); if (tp) tp.textContent = OS_NAME[os];
+    var ta = document.getElementById("ta"); if (ta) ta.textContent = p.name;
+    var tv = document.getElementById("tv"); if (tv) tv.textContent = releaseTag || "beta";
+  }
+
+  // ---- Copy buttons (delegated across all command blocks) ---------------
+  document.addEventListener("click", function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest(".copybtn") : null;
+    if (!btn) return;
+    var text = btn.getAttribute("data-copy") || "";
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(done, done);
+    function done() {
+      btn.textContent = "Copied"; btn.classList.add("done");
+      setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1600);
+    }
   });
 
   // ---- Boot --------------------------------------------------------------
-  if (override === "live")      { showDownload(); return; }
+  // The beta is live, so downloads are the default. The pre-launch countdown
+  // (with its tamper-resistant clock) stays available at ?preview=countdown.
   if (override === "countdown") {
     showCountdown(); runTerminalIntro();
     setInterval(renderCountdown, 250); renderCountdown();
@@ -555,25 +792,7 @@
     return;
   }
 
-  // Normal, tamper-resistant flow.
-  showCountdown(); renderCountdown(); renderTimeSource(); runTerminalIntro();
-
-  var unlocked = false;
-  function tick() {
-    renderCountdown();
-    var t = nowTrusted();
-    if (!unlocked && haveTrusted && t != null && t >= TARGET) { unlocked = true; showDownload(); }
-  }
-  setInterval(tick, 250);
-
-  function refreshTrust() {
-    acquireTrustedTime().then(function () {
-      renderTimeSource(); tick();
-      if (!haveTrusted) setTimeout(refreshTrust, 15000);
-    });
-  }
-  refreshTrust();
-  setInterval(function () { if (!unlocked) acquireTrustedTime().then(function(){ renderTimeSource(); tick(); }); }, 60000);
+  showDownload();
 })();
 </script>
 </body>
